@@ -5,6 +5,7 @@ import requests_cache
 import re
 from bs4 import BeautifulSoup
 import json
+import yaml
 from datetime import datetime
 
 requests_cache.install_cache('celery_cache')
@@ -15,16 +16,18 @@ COLLECTION_RESOURCE_IDS = [
     'ec61d82a-748d-4b53-8e99-3e708e76bc4d'
 ]
 
+with open("config.yml", 'r') as ymlfile:
+    cfg = yaml.load(ymlfile)
+
 def _get_soup(url):
-    r = requests.get(url, auth=('admin', 'paizuiW7'))
-    return BeautifulSoup(r.text)
+    r = requests.get(url, auth=(cfg['username'], cfg['password']))
+    return BeautifulSoup(r.text,  "html.parser")
 
 def main():
-
     result = {}
-
     url = 'http://dp-nlb-2.nhm.ac.uk:5555/tasks?limit=10010&worker=All&type=All&state=All'
-    soup = _get_soup(url)
+    with requests_cache.disabled():
+        soup = _get_soup(url)
     task_links = soup.findAll('a', href=re.compile('^/task/'))
 
     re_resource_id = re.compile("'resource_id': u'([0-9a-z\-]+)'")
